@@ -20,7 +20,7 @@
 </head>
 <body class="bg-amber-50/40 min-h-screen text-slate-800 pb-12">
 
-    <!-- Top Header Banner (Click Header Title to access Admin with PIN: 591773) -->
+    <!-- Top Header Banner (Click Title to access Admin with PIN: 591773) -->
     <header class="bg-amber-800 text-white shadow-lg border-b-4 border-amber-600">
         <div class="max-w-5xl mx-auto px-4 py-6">
             <div class="text-center md:text-left">
@@ -397,7 +397,7 @@
                 submittedAt: new Date().toLocaleString()
             };
 
-            const baseParams = {
+            const templateParams = {
                 first_name: newResponse.firstName,
                 last_name: newResponse.lastName,
                 phone: newResponse.phone,
@@ -407,24 +407,13 @@
                 timeSlot: newResponse.timeSlot
             };
 
-            // 1. Dispatch email to Admin (abigailsantos@katyisd.org)
-            const adminPromise = emailjs.send("service_3qwjyum", "template_g50yw9s", {
-                ...baseParams,
-                to_email: "abigailsantos@katyisd.org"
-            });
-
-            // 2. Dispatch same email to Applicant (user email)
-            const userPromise = emailjs.send("service_3qwjyum", "template_g50yw9s", {
-                ...baseParams,
-                to_email: newResponse.email
-            });
-
-            Promise.all([adminPromise, userPromise]).then(
-                function(results) {
-                    console.log('BOTH EMAILS SENT SUCCESSFULLY!', results);
+            // Single clean dispatch to EmailJS
+            emailjs.send("service_3qwjyum", "template_g50yw9s", templateParams).then(
+                function(res) {
+                    console.log('EMAIL DISPATCH SUCCESSFUL!', res.status, res.text);
                 },
                 function(err) {
-                    console.error('EMAIL FAILURE:', err);
+                    console.error('EMAIL DISPATCH FAILED:', err);
                 }
             ).finally(() => {
                 responses.unshift(newResponse);
