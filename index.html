@@ -80,7 +80,7 @@
                     <h3 class="font-bold text-lg flex items-center gap-2">
                         <i data-lucide="file-text" class="text-amber-400"></i> Employee Information & Pick-Up Time
                     </h3>
-                    <span class="text-xs bg-slate-700 px-3 py-1 rounded-full text-slate-300 font-medium">Tue - Thu Only</span>
+                    <span class="text-xs bg-slate-700 px-3 py-1 rounded-full text-slate-300 font-medium">Tue - Thu Only (Excludes District Holidays)</span>
                 </div>
 
                 <form id="pickupForm" onsubmit="handleFormSubmit(event)" class="p-6 md:p-8 space-y-6">
@@ -235,14 +235,21 @@
                     <i data-lucide="check-circle-2" class="w-8 h-8"></i>
                 </div>
                 <h3 class="text-xl font-bold text-slate-900">Pickup Request Confirmed!</h3>
-                <p class="text-slate-500 text-sm mt-1">Please save or screenshot your appointment reminder below.</p>
+                <p class="text-slate-500 text-sm mt-1">A confirmation email has been sent to your email address.</p>
             </div>
 
             <div class="bg-amber-50/80 p-4 rounded-xl border border-amber-200 space-y-2 text-sm text-slate-800">
                 <p><strong>Employee:</strong> <span id="modalName" class="font-semibold"></span></p>
+                <p><strong>Email Sent To:</strong> <span id="modalEmail" class="font-semibold text-amber-900"></span></p>
                 <p><strong>Location:</strong> South Transportation Center (3151 Falcon Landing Blvd)</p>
                 <p><strong>Scheduled Date:</strong> <span id="modalDate" class="font-bold text-amber-900"></span></p>
                 <p><strong>Time:</strong> <span id="modalTime" class="font-bold text-amber-900"></span></p>
+            </div>
+
+            <!-- Email Notification Alert Box -->
+            <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-lg text-xs text-emerald-950 flex items-start gap-2">
+                <i data-lucide="mail-check" class="w-5 h-5 text-emerald-700 flex-shrink-0 mt-0.5"></i>
+                <p><strong>Email Confirmation Sent:</strong> Please check your inbox for your appointment details. You can also save or screenshot this reminder below.</p>
             </div>
 
             <div class="bg-amber-100/60 border border-amber-300 p-3 rounded-lg text-xs text-amber-950 flex items-start gap-2">
@@ -268,8 +275,38 @@
 
     <script>
         const ADMIN_PIN = "591773";
-        // LIVE GOOGLE APPS SCRIPT WEB APP URL:
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxw6__BcvBsRTvj_721qju4Cic8tuJJij9Kyr16dwl9GjSevIFXfEXd75I4j-XtdS026g/exec";
+
+        // Katy ISD Excluded Dates (Holidays, Professional Learning Days, District Closures, Flex Days)
+        const KATY_ISD_EXCLUDED_DATES = [
+            // 2026-2027 District Excluded Dates
+            "2026-07-01", "2026-07-02", "2026-07-03", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31",
+            "2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11",
+            "2026-09-07", "2026-09-18",
+            "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-23",
+            "2026-11-02", "2026-11-23", "2026-11-24", "2026-11-25", "2026-11-26", "2026-11-27",
+            "2026-12-21", "2026-12-22", "2026-12-23", "2026-12-24", "2026-12-25", "2026-12-28", "2026-12-29", "2026-12-30", "2026-12-31",
+            "2027-01-01", "2027-01-04", "2027-01-18",
+            "2027-02-12", "2027-02-15",
+            "2027-03-08", "2027-03-09", "2027-03-10", "2027-03-11", "2027-03-12", "2027-03-26", "2027-03-29",
+            "2027-04-09",
+            "2027-05-27", "2027-05-31",
+            "2027-06-18",
+
+            // 2027-2028 District Excluded Dates
+            "2027-07-05", "2027-07-06", "2027-07-07", "2027-07-08", "2027-07-09", "2027-07-27", "2027-07-28", "2027-07-29", "2027-07-30",
+            "2027-08-02", "2027-08-03", "2027-08-04", "2027-08-05", "2027-08-06", "2027-08-09", "2027-08-10",
+            "2027-09-06", "2027-09-17",
+            "2027-10-08", "2027-10-11", "2027-10-12", "2027-10-22",
+            "2027-11-01", "2027-11-22", "2027-11-23", "2027-11-24", "2027-11-25", "2027-11-26",
+            "2027-12-20", "2027-12-21", "2027-12-22", "2027-12-23", "2027-12-24", "2027-12-27", "2027-12-28", "2027-12-29", "2027-12-30", "2027-12-31",
+            "2028-01-03", "2028-01-17",
+            "2028-02-11", "2028-02-14",
+            "2028-03-10", "2028-03-13", "2028-03-14", "2028-03-15", "2028-03-16", "2028-03-17",
+            "2028-04-10", "2028-04-14", "2028-04-17",
+            "2028-05-25", "2028-05-29",
+            "2028-06-19"
+        ];
 
         let isAdminAuthenticated = false;
         let currentDate = new Date();
@@ -324,21 +361,34 @@
             const grid = document.getElementById('calendarGrid');
             grid.innerHTML = '';
 
+            // Today's date with time zeroed out for accurate date-only comparison
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
             for (let i = 0; i < firstDay; i++) {
                 grid.appendChild(document.createElement('div'));
             }
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateObj = new Date(year, month, day);
+                dateObj.setHours(0, 0, 0, 0);
+
                 const dayOfWeek = dateObj.getDay();
-                const isAllowed = (dayOfWeek === 2 || dayOfWeek === 3 || dayOfWeek === 4);
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+                // Criteria: Tuesday (2), Wednesday (3), Thursday (4) ONLY
+                const isTueWedThu = (dayOfWeek === 2 || dayOfWeek === 3 || dayOfWeek === 4);
+                // Criteria: Must be today or in the future
+                const isFutureOrToday = dateObj >= today;
+                // Criteria: Must not be in Katy ISD excluded holiday list
+                const isNotHoliday = !KATY_ISD_EXCLUDED_DATES.includes(dateStr);
+
+                const isAllowed = isTueWedThu && isFutureOrToday && isNotHoliday;
 
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.textContent = day;
                 btn.className = `p-2.5 rounded-lg border text-sm font-medium transition calendar-day ${isAllowed ? 'allowed border-slate-300 font-bold text-slate-800' : 'border-transparent text-slate-300'}`;
-
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
                 if (!isAllowed) {
                     btn.disabled = true;
@@ -395,7 +445,7 @@
                 submittedAt: new Date().toLocaleString()
             };
 
-            // Post to Google Sheet & Teams Webhook
+            // Post to Google Sheet Backend
             fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
                 mode: "no-cors",
@@ -410,6 +460,7 @@
                 localStorage.setItem('katy_pickup_responses', JSON.stringify(responses));
 
                 document.getElementById('modalName').textContent = `${lastSubmittedData.firstName} ${lastSubmittedData.lastName}`;
+                document.getElementById('modalEmail').textContent = lastSubmittedData.email;
                 document.getElementById('modalDate').textContent = selectedCalendarDate;
                 document.getElementById('modalTime').textContent = timeSlot;
                 
