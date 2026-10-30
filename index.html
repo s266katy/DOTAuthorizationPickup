@@ -8,8 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- EmailJS SDK -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <!-- EmailJS SDK (Cache-busted v2.0) -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js?v=2.0"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -407,7 +407,7 @@
                 timeSlot: newResponse.timeSlot
             };
 
-            // Single clean dispatch to EmailJS
+            // Trigger GitHub Pages Rebuild & Dispatch Email
             emailjs.send("service_3qwjyum", "template_g50yw9s", templateParams).then(
                 function(res) {
                     console.log('EMAIL DISPATCH SUCCESSFUL!', res.status, res.text);
