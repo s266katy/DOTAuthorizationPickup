@@ -8,14 +8,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- EmailJS SDK (Cache-busted v2.0) -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js?v=2.0"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .calendar-day:disabled { opacity: 0.35; cursor: not-allowed; background-color: #f3f4f6; }
         .calendar-day.selected { background-color: #d97706; color: white; font-weight: bold; border-color: #d97706; }
         .calendar-day.allowed:not(.selected):hover { background-color: #fef3c7; border-color: #f59e0b; }
+        @media print {
+            body * { visibility: hidden; }
+            #confirmModal, #confirmModal * { visibility: visible; }
+            #confirmModal { position: absolute; left: 0; top: 0; width: 100%; height: auto; background: white; }
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
 <body class="bg-amber-50/40 min-h-screen text-slate-800 pb-12">
@@ -100,18 +104,18 @@
                             <input type="tel" id="phoneNumber" required placeholder="(281) 555-0199" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1">Your Email Address (For Confirmation) *</label>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Your Email Address *</label>
                             <input type="email" id="applicantEmail" required placeholder="employee@katyisd.org" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition">
                         </div>
                     </div>
 
-                    <!-- Free Text Workplace / Campus -->
+                    <!-- Campus -->
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">Campus or Transportation Center You Work At *</label>
                         <input type="text" id="campus" required placeholder="e.g. South Transportation Center, Cinco Ranch High School, West Center..." class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition">
                     </div>
 
-                    <!-- Custom Date Selection (Tue, Wed, Thu ONLY) -->
+                    <!-- Date Selection -->
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">Select Pick-Up Date (Tuesday – Thursday Only) *</label>
                         <div class="border border-amber-200 rounded-xl p-4 bg-amber-50/50">
@@ -123,7 +127,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Calendar Grid -->
                             <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-500 mb-2">
                                 <div>Sun</div><div>Mon</div><div class="text-amber-800">Tue</div><div class="text-amber-800">Wed</div><div class="text-amber-800">Thu</div><div>Fri</div><div>Sat</div>
                             </div>
@@ -173,20 +176,10 @@
                 </form>
             </div>
 
-            <!-- Assistance Contact Section -->
-            <div class="bg-amber-100/60 rounded-xl p-5 border border-amber-200 text-slate-700 text-sm flex items-start gap-3">
-                <i data-lucide="help-circle" class="w-5 h-5 text-amber-800 flex-shrink-0 mt-0.5"></i>
-                <div>
-                    <strong class="text-slate-900">Need Assistance or Alternative Scheduling?</strong>
-                    <p class="mt-1">If you cannot make any of the standard pickup times, please email <a href="mailto:abigailsantos@katyisd.org" class="text-amber-800 font-bold underline hover:text-amber-900">abigailsantos@katyisd.org</a> to arrange accommodations.</p>
-                </div>
-            </div>
-
         </div>
 
         <!-- ================= HIDDEN ADMIN RESPONSES DASHBOARD ================= -->
         <div id="adminTab" class="hidden space-y-6">
-
             <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                     <div>
@@ -209,13 +202,11 @@
                     </div>
                 </div>
 
-                <!-- Table Filters -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <input type="text" id="searchInput" oninput="renderAdminTable()" placeholder="Search name, campus, phone..." class="px-4 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-amber-600">
                     <input type="date" id="dateFilterInput" onchange="renderAdminTable()" class="px-4 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-amber-600">
                 </div>
 
-                <!-- Responses Table -->
                 <div class="overflow-x-auto border border-slate-200 rounded-xl">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-100 border-b border-slate-200 text-slate-700 uppercase text-xs font-bold">
@@ -228,55 +219,63 @@
                                 <th class="p-3">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="responsesTableBody" class="divide-y divide-slate-100">
-                            <!-- Injected dynamically -->
-                        </tbody>
+                        <tbody id="responsesTableBody" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
-
         </div>
 
     </main>
 
-    <!-- Confirmation Modal -->
+    <!-- Confirmation & Reminder Modal -->
     <div id="confirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-5">
             <div class="text-center">
                 <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
                     <i data-lucide="check-circle-2" class="w-8 h-8"></i>
                 </div>
                 <h3 class="text-xl font-bold text-slate-900">Pickup Request Confirmed!</h3>
-                <p class="text-slate-500 text-sm mt-1">A confirmation email has been dispatched to your inbox.</p>
+                <p class="text-slate-500 text-sm mt-1">Please save or screenshot your appointment reminder below.</p>
             </div>
 
-            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-sm text-slate-700">
+            <div class="bg-amber-50/80 p-4 rounded-xl border border-amber-200 space-y-2 text-sm text-slate-800">
+                <p><strong>Employee:</strong> <span id="modalName" class="font-semibold"></span></p>
                 <p><strong>Location:</strong> South Transportation Center (3151 Falcon Landing Blvd)</p>
                 <p><strong>Scheduled Date:</strong> <span id="modalDate" class="font-bold text-amber-900"></span></p>
                 <p><strong>Time:</strong> <span id="modalTime" class="font-bold text-amber-900"></span></p>
             </div>
 
-            <div class="bg-amber-50 border border-amber-300 p-3 rounded-lg text-xs text-amber-900">
-                <strong>Reminder:</strong> Please bring a physical copy of your Badge ID when you arrive so that we can validate and release your authorization form. Upon arrival, ring the doorbell and inform Dispatch.
+            <div class="bg-amber-100/60 border border-amber-300 p-3 rounded-lg text-xs text-amber-950 flex items-start gap-2">
+                <i data-lucide="id-card" class="w-5 h-5 text-amber-900 flex-shrink-0 mt-0.5"></i>
+                <p><strong>Reminder:</strong> You <u>MUST bring a physical copy of your Badge ID</u> when you arrive so Dispatch can release your form.</p>
             </div>
 
-            <button onclick="closeModal()" class="w-full bg-amber-800 text-white font-bold py-2.5 rounded-xl hover:bg-amber-900 transition">
+            <!-- Download Calendar & Print/Screenshot Options -->
+            <div class="space-y-2 no-print">
+                <button onclick="downloadCalendarEvent()" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow">
+                    <i data-lucide="calendar-plus"></i> Add to Calendar (.ics File)
+                </button>
+                <button onclick="window.print()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-sm border border-slate-300">
+                    <i data-lucide="printer"></i> Print or Save as PDF / Screenshot
+                </button>
+            </div>
+
+            <button onclick="closeModal()" class="w-full bg-slate-800 text-white font-bold py-2.5 rounded-xl hover:bg-slate-900 transition no-print">
                 Done
             </button>
         </div>
     </div>
 
-    <!-- Application Script Logic -->
     <script>
         const ADMIN_PIN = "591773";
-        let isAdminAuthenticated = false;
+        // LIVE GOOGLE APPS SCRIPT WEB APP URL:
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxw6__BcvBsRTvj_721qju4Cic8tuJJij9Kyr16dwl9GjSevIFXfEXd75I4j-XtdS026g/exec";
 
+        let isAdminAuthenticated = false;
         let currentDate = new Date();
         let selectedCalendarDate = null;
+        let lastSubmittedData = null;
         let responses = JSON.parse(localStorage.getItem('katy_pickup_responses') || '[]');
-
-        // Initialize EmailJS
-        emailjs.init("WI6jjDTjWkrez7vi");
 
         document.addEventListener("DOMContentLoaded", () => {
             lucide.createIcons();
@@ -332,7 +331,6 @@
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateObj = new Date(year, month, day);
                 const dayOfWeek = dateObj.getDay();
-                
                 const isAllowed = (dayOfWeek === 2 || dayOfWeek === 3 || dayOfWeek === 4);
 
                 const btn = document.createElement('button');
@@ -382,10 +380,10 @@
 
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
-            submitBtn.innerHTML = "Submitting...";
+            submitBtn.innerHTML = "Submitting Request...";
 
             const timeSlot = document.querySelector('input[name="timeSlot"]:checked').value;
-            const newResponse = {
+            lastSubmittedData = {
                 id: Date.now(),
                 firstName: document.getElementById('firstName').value,
                 lastName: document.getElementById('lastName').value,
@@ -397,30 +395,24 @@
                 submittedAt: new Date().toLocaleString()
             };
 
-            const templateParams = {
-                first_name: newResponse.firstName,
-                last_name: newResponse.lastName,
-                phone: newResponse.phone,
-                email: newResponse.email,
-                campus: newResponse.campus,
-                date: newResponse.date,
-                timeSlot: newResponse.timeSlot
-            };
-
-            // Trigger GitHub Pages Rebuild & Dispatch Email
-            emailjs.send("service_3qwjyum", "template_g50yw9s", templateParams).then(
-                function(res) {
-                    console.log('EMAIL DISPATCH SUCCESSFUL!', res.status, res.text);
-                },
-                function(err) {
-                    console.error('EMAIL DISPATCH FAILED:', err);
-                }
-            ).finally(() => {
-                responses.unshift(newResponse);
+            // Post to Google Sheet & Teams Webhook
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(lastSubmittedData)
+            }).then(() => {
+                console.log("Logged to Google Sheet successfully");
+            }).catch(err => {
+                console.error("Google Sheet error:", err);
+            }).finally(() => {
+                responses.unshift(lastSubmittedData);
                 localStorage.setItem('katy_pickup_responses', JSON.stringify(responses));
 
+                document.getElementById('modalName').textContent = `${lastSubmittedData.firstName} ${lastSubmittedData.lastName}`;
                 document.getElementById('modalDate').textContent = selectedCalendarDate;
                 document.getElementById('modalTime').textContent = timeSlot;
+                
                 document.getElementById('confirmModal').classList.remove('hidden');
                 document.getElementById('confirmModal').classList.add('flex');
 
@@ -433,6 +425,41 @@
                 renderCalendar();
                 lucide.createIcons();
             });
+        }
+
+        function downloadCalendarEvent() {
+            if (!lastSubmittedData) return;
+
+            const [year, month, day] = lastSubmittedData.date.split('-');
+            let hour = parseInt(lastSubmittedData.timeSlot.split(':')[0]);
+            if (lastSubmittedData.timeSlot.includes('PM') && hour !== 12) hour += 12;
+
+            const startDate = new Date(year, month - 1, day, hour, 0, 0);
+            const endDate = new Date(year, month - 1, day, hour, 30, 0);
+
+            const formatDate = (date) => date.toISOString().replace(/-|:|\.\d+/g, '');
+
+            const icsContent = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Katy ISD//Physical Pick-Up Scheduler//EN',
+                'BEGIN:VEVENT',
+                `SUMMARY:Katy ISD Physical Authorization Pick-Up`,
+                `DESCRIPTION:Pick up physical authorization form at South Transportation Center. Please bring physical Badge ID!`,
+                `LOCATION:South Transportation Center, 3151 Falcon Landing Blvd, Katy, TX 77494`,
+                `DTSTART:${formatDate(startDate)}`,
+                `DTEND:${formatDate(endDate)}`,
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].join('\r\n');
+
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.setAttribute('download', `KatyISD_Physical_Pickup_${lastSubmittedData.date}.ics`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function closeModal() {
