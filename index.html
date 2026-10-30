@@ -268,7 +268,6 @@
 
     <!-- Application Script Logic -->
     <script>
-        // Updated Admin PIN passcode
         const ADMIN_PIN = "591773";
         let isAdminAuthenticated = false;
 
@@ -398,24 +397,34 @@
                 submittedAt: new Date().toLocaleString()
             };
 
-            const templateParams = {
+            const baseParams = {
                 first_name: newResponse.firstName,
                 last_name: newResponse.lastName,
-                name: `${newResponse.firstName} ${newResponse.lastName}`,
                 phone: newResponse.phone,
                 email: newResponse.email,
-                reply_to: newResponse.email,
                 campus: newResponse.campus,
                 date: newResponse.date,
                 timeSlot: newResponse.timeSlot
             };
 
-            emailjs.send("service_3qwjyum", "template_g50yw9s", templateParams).then(
-                function(res) {
-                    console.log('EMAIL SENT SUCCESSFULLY!', res.status, res.text);
+            // 1. Dispatch email to Admin (abigailsantos@katyisd.org)
+            const adminPromise = emailjs.send("service_3qwjyum", "template_g50yw9s", {
+                ...baseParams,
+                to_email: "abigailsantos@katyisd.org"
+            });
+
+            // 2. Dispatch same email to Applicant (user email)
+            const userPromise = emailjs.send("service_3qwjyum", "template_g50yw9s", {
+                ...baseParams,
+                to_email: newResponse.email
+            });
+
+            Promise.all([adminPromise, userPromise]).then(
+                function(results) {
+                    console.log('BOTH EMAILS SENT SUCCESSFULLY!', results);
                 },
                 function(err) {
-                    console.error('EMAIL FAILED TO SEND:', err);
+                    console.error('EMAIL FAILURE:', err);
                 }
             ).finally(() => {
                 responses.unshift(newResponse);
